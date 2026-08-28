@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import ProjectCard from './ProjectCard';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, PhoneCall, Sparkles } from 'lucide-react';
 
 const ProjectGrid = ({ projects, onOpenQuoteModal }) => {
@@ -44,15 +43,9 @@ const ProjectGrid = ({ projects, onOpenQuoteModal }) => {
       </div>
 
       {/* Full-Screen Lightbox Preview */}
-      <AnimatePresence>
-        {activeLightbox && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative max-w-4xl w-full bg-warm-ivory border border-warm-taupe/30 rounded-2xl overflow-hidden shadow-2xl"
-            >
+      {activeLightbox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-md animate-fade-in">
+          <div className="relative max-w-4xl w-full bg-warm-ivory border border-warm-taupe/30 rounded-2xl overflow-hidden shadow-2xl">
               {/* Lightbox Header */}
               <div className="p-4 sm:p-5 bg-warm-ivory border-b border-warm-taupe/20 flex items-center justify-between">
                 <div>
@@ -114,10 +107,9 @@ const ProjectGrid = ({ projects, onOpenQuoteModal }) => {
                   <span>Request Similar Design</span>
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
     </>
   );
 };

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Sparkles, CheckCircle, PhoneCall } from 'lucide-react';
 import apiClient from '../api/apiClient';
 import { ToastContext } from '../context/ToastContext';
@@ -38,22 +37,25 @@ const ConsultationModal = ({ isOpen, onClose, autoTrigger = false }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.email.trim()) {
-      showToast('Please fill out your Name, Phone, and Email.', 'error');
+    if (!formData.name || !formData.phone) {
+      showToast('Please provide your name and phone number.', 'error');
       return;
     }
 
     setLoading(true);
-
     try {
-      const res = await apiClient.post('/leads', formData);
+      const res = await apiClient.post('/leads', {
+        ...formData,
+        source: autoTrigger ? 'Auto-Popup Modal' : 'Consultation Modal'
+      });
+
       if (res.data.success) {
         setSubmitted(true);
         localStorage.setItem('karoli_lead_submitted', 'true');
-        showToast('Consultation request submitted successfully!');
+        showToast('Consultation request sent! We will call you soon.');
         setTimeout(() => {
-          setSubmitted(false);
           onClose();
+          setSubmitted(false);
         }, 3000);
       }
     } catch (err) {
@@ -66,30 +68,21 @@ const ConsultationModal = ({ isOpen, onClose, autoTrigger = false }) => {
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-charcoal/60 backdrop-blur-sm"
-        />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-charcoal/60 backdrop-blur-sm"
+      />
 
-        {/* Modal Window */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative bg-warm-ivory border border-warm-taupe/30 rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 z-10 my-8 text-charcoal overflow-hidden"
+      {/* Modal Window */}
+      <div className="relative bg-warm-ivory border border-warm-taupe/30 rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 z-10 my-8 text-charcoal overflow-hidden">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-warm-taupe hover:text-charcoal transition-colors rounded-full hover:bg-soft-beige"
+          aria-label="Close consultation modal"
         >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-warm-taupe hover:text-charcoal transition-colors rounded-full hover:bg-soft-beige"
-            aria-label="Close consultation modal"
-          >
             <X className="w-5 h-5" />
           </button>
 
@@ -253,9 +246,8 @@ const ConsultationModal = ({ isOpen, onClose, autoTrigger = false }) => {
               </form>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
-    </AnimatePresence>
   );
 };
 
