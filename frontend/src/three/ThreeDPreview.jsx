@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight, Eye, Layers } from 'lucide-react';
-import ThreeDViewer from './ThreeDViewer';
+import { Sparkles, ArrowRight, Eye, Layers, Box, Play } from 'lucide-react';
+
+const ThreeDViewer = lazy(() => import('./ThreeDViewer'));
 
 export const ThreeDPreview = ({ onOpenQuoteModal }) => {
+  const [isInteractive, setIsInteractive] = useState(false);
+
   return (
     <section className="py-20 bg-soft-beige/40 border-y border-warm-taupe/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,14 +55,51 @@ export const ThreeDPreview = ({ onOpenQuoteModal }) => {
           {/* 3D Canvas Preview Widget */}
           <div className="lg:col-span-7 relative">
             <div className="absolute -inset-2 bg-gradient-to-r from-deep-olive/10 via-muted-sage/20 to-warm-taupe/10 rounded-3xl blur-xl opacity-70" />
-            <div className="relative">
-              <ThreeDViewer
-                wallMaterial="warm-ivory"
-                ceilingMaterial="white-pvc"
-                floorMaterial="light-marble"
-                lightColor="warm"
-                rgbEnabled={false}
-              />
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-charcoal min-h-[420px] flex items-center justify-center border border-white/20">
+              {isInteractive ? (
+                <Suspense
+                  fallback={
+                    <div className="h-[420px] w-full flex flex-col items-center justify-center text-white/80 gap-3">
+                      <div className="w-8 h-8 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+                      <span className="text-xs uppercase tracking-widest font-medium">Initializing 3D Studio…</span>
+                    </div>
+                  }
+                >
+                  <ThreeDViewer
+                    wallMaterial="warm-ivory"
+                    ceilingMaterial="white-pvc"
+                    floorMaterial="light-marble"
+                    lightColor="warm"
+                    rgbEnabled={false}
+                  />
+                </Suspense>
+              ) : (
+                <div className="relative w-full h-[420px] bg-gradient-to-br from-[#292A26] via-[#3F5036] to-[#1f2a1a] flex flex-col items-center justify-center p-8 text-center">
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
+                    style={{ backgroundImage: "url('/portfolio/p1_living_ceiling.jpg')" }}
+                  />
+                  <div className="relative z-10 space-y-4 max-w-sm">
+                    <div className="w-16 h-16 rounded-full bg-white/15 backdrop-blur border border-white/30 flex items-center justify-center mx-auto text-white shadow-xl group hover:scale-110 transition-transform">
+                      <Box className="w-8 h-8 text-amber-300 animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-serif text-xl font-bold">Interactive 3D Room Viewer</h3>
+                      <p className="text-white/70 text-xs mt-1">
+                        Rotate 360°, inspect PVC ceiling patterns, lighting coves, and wall textures in real-time.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsInteractive(true)}
+                      className="bg-amber-500 hover:bg-amber-400 text-charcoal font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-full shadow-lg transition-transform hover:scale-105 inline-flex items-center gap-2"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Launch 3D Interaction</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

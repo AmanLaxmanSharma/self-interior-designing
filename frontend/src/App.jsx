@@ -1,41 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import FloatingContact from './components/FloatingContact';
 import ConsultationModal from './components/ConsultationModal';
-
-// Public Pages
-import Home from './pages/Home';
-import About from './pages/About';
-import Services from './pages/Services';
-import ServiceDetails from './pages/ServiceDetails';
-import Projects from './pages/Projects';
-import ProjectDetails from './pages/ProjectDetails';
-import Inspiration from './pages/Inspiration';
-import Studio3D from './pages/Studio3D';
-import Contact from './pages/Contact';
-import Quote from './pages/Quote';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import Terms from './pages/Terms';
-import NotFound from './pages/NotFound';
-
-// User Portal Pages
-import UserDashboard from './pages/user/UserDashboard';
-
-// Admin Portal Pages
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminLeads from './pages/admin/AdminLeads';
-import AdminProjects from './pages/admin/AdminProjects';
-import AdminServices from './pages/admin/AdminServices';
-import AdminGallery from './pages/admin/AdminGallery';
-import AdminModels3D from './pages/admin/AdminModels3D';
-import AdminSettings from './pages/admin/AdminSettings';
-
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Keep Home synchronous for fast First Paint, lazy-load all other routes
+import Home from './pages/Home';
+
+// Lazy-loaded Customer Pages
+const About = lazy(() => import('./pages/About'));
+const Services = lazy(() => import('./pages/Services'));
+const ServiceDetails = lazy(() => import('./pages/ServiceDetails'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectDetails = lazy(() => import('./pages/ProjectDetails'));
+const Inspiration = lazy(() => import('./pages/Inspiration'));
+const Studio3D = lazy(() => import('./pages/Studio3D'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Quote = lazy(() => import('./pages/Quote'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const Terms = lazy(() => import('./pages/Terms'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+// Lazy-loaded User Portal Pages
+const UserDashboard = lazy(() => import('./pages/user/UserDashboard'));
+
+// Lazy-loaded Admin Portal Pages
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminLeads = lazy(() => import('./pages/admin/AdminLeads'));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
+const AdminServices = lazy(() => import('./pages/admin/AdminServices'));
+const AdminGallery = lazy(() => import('./pages/admin/AdminGallery'));
+const AdminModels3D = lazy(() => import('./pages/admin/AdminModels3D'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+
+// Minimal fast fallback loader
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex items-center justify-center bg-warm-ivory">
+    <div className="w-8 h-8 border-3 border-[#3F5036]/20 border-t-[#3F5036] rounded-full animate-spin" />
+  </div>
+);
 
 function App() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -67,9 +75,10 @@ function App() {
       )}
 
       <div className="flex-1">
-        <Routes>
-          {/* Public Customer Routes */}
-          <Route path="/" element={<Home onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public Customer Routes */}
+            <Route path="/" element={<Home onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/quote" element={<Quote />} />
           <Route path="/login" element={<Login />} />
@@ -207,7 +216,8 @@ function App() {
           {/* 404 Fallback */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </div>
+      </Suspense>
+    </div>
 
       {!isAuthRoute && (
         <>
