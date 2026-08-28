@@ -40,20 +40,20 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAuthRoute = location.pathname.startsWith('/admin') || location.pathname === '/login' || location.pathname === '/register';
 
   // Intelligent Consultation Popup Trigger after 5 seconds
   useEffect(() => {
     const isSubmitted = localStorage.getItem('karoli_lead_submitted');
     const isDismissed = sessionStorage.getItem('karoli_popup_dismissed');
 
-    if (!isSubmitted && !isDismissed && !isAdminRoute) {
+    if (!isSubmitted && !isDismissed && !isAuthRoute) {
       const timer = setTimeout(() => {
         setIsQuoteModalOpen(true);
       }, 5000); // 5 Seconds delay
       return () => clearTimeout(timer);
     }
-  }, [isAdminRoute]);
+  }, [isAuthRoute]);
 
   const handleCloseModal = () => {
     setIsQuoteModalOpen(false);
@@ -62,7 +62,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between font-sans">
-      {!isAdminRoute && (
+      {!isAuthRoute && (
         <Navbar onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
       )}
 
@@ -70,19 +70,70 @@ function App() {
         <Routes>
           {/* Public Customer Routes */}
           <Route path="/" element={<Home onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/about" element={<About onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/services" element={<Services onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/services/:id" element={<ServiceDetails onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/projects" element={<Projects onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/projects/:id" element={<ProjectDetails onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/inspiration" element={<Inspiration onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
-          <Route path="/3d-studio" element={<Studio3D onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/quote" element={<Quote />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-conditions" element={<Terms />} />
+
+          {/* Protected Customer Routes (Only visible/accessible after login/register) */}
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <About onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <Services onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services/:id"
+            element={
+              <ProtectedRoute>
+                <ServiceDetails onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Projects onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:id"
+            element={
+              <ProtectedRoute>
+                <ProjectDetails onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inspiration"
+            element={
+              <ProtectedRoute>
+                <Inspiration onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/3d-studio"
+            element={
+              <ProtectedRoute>
+                <Studio3D onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
+              </ProtectedRoute>
+            }
+          />
 
           {/* User Portal Protected Route */}
           <Route
@@ -158,7 +209,7 @@ function App() {
         </Routes>
       </div>
 
-      {!isAdminRoute && (
+      {!isAuthRoute && (
         <>
           <Footer onOpenQuoteModal={() => setIsQuoteModalOpen(true)} />
           <FloatingContact />

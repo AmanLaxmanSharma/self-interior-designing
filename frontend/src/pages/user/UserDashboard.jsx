@@ -61,17 +61,14 @@ const UserDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F0E6]">
-      {/* Top Nav */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-[#E8DDCC] shadow-sm">
+    <div className="min-h-screen bg-[#F5F0E6] pt-20">
+      {/* Subnav */}
+      <header className="bg-white/90 backdrop-blur border-b border-[#E8DDCC] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-[#3F5036] text-white font-serif font-bold text-lg flex items-center justify-center shadow-sm">K</div>
-            <div className="hidden sm:block">
-              <p className="font-serif text-sm font-bold text-[#292A26] leading-tight">Karoli Interior Hub</p>
-              <p className="text-[10px] text-[#3F5036] uppercase tracking-widest font-semibold">Customer Portal</p>
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            <p className="font-serif text-sm font-bold text-[#292A26]">Customer Portal</p>
+            <span className="text-xs text-[#292A26]/50">| Hi, {user?.name || 'Customer'}</span>
+          </div>
 
           <nav className="hidden md:flex items-center gap-1 bg-[#F5F0E6] rounded-xl p-1">
             {navItems.map(item => {
@@ -97,19 +94,13 @@ const UserDashboard = () => {
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-[#292A26]">{user?.name}</p>
-              <p className="text-[10px] text-[#292A26]/50">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#B9A895]/40 bg-white hover:bg-red-50 text-red-600 text-xs font-semibold transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#B9A895]/40 bg-white hover:bg-red-50 text-red-600 text-xs font-semibold transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
         </div>
 
         {/* Mobile tabs */}

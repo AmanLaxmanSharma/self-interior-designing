@@ -24,15 +24,20 @@ const Navbar = ({ onOpenQuoteModal }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'About', path: '/about' },
-    { name: 'Services', path: '/services' },
-    { name: 'Projects', path: '/projects' },
-    { name: 'Inspiration', path: '/inspiration' },
-    { name: '3D Studio', path: '/3d-studio', highlight: true },
-    { name: 'Contact', path: '/contact' }
-  ];
+  const navLinks = user
+    ? [
+        { name: 'Home', path: '/' },
+        { name: 'About', path: '/about' },
+        { name: 'Services', path: '/services' },
+        { name: 'Projects', path: '/projects' },
+        { name: 'Inspiration', path: '/inspiration' },
+        { name: '3D Studio', path: '/3d-studio', highlight: true },
+        { name: 'Contact', path: '/contact' }
+      ]
+    : [
+        { name: 'Home', path: '/' },
+        { name: 'Contact', path: '/contact' }
+      ];
 
   const primaryPhone = settings?.phones?.[0] || '7347733581';
 
@@ -107,7 +112,7 @@ const Navbar = ({ onOpenQuoteModal }) => {
             <div className="flex items-center gap-2">
               <Link
                 to={isAdmin ? '/admin' : '/dashboard'}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   scrolled
                     ? 'border-warm-taupe/40 text-charcoal hover:bg-soft-beige'
                     : 'border-white/30 text-white hover:bg-white/20'
@@ -121,10 +126,20 @@ const Navbar = ({ onOpenQuoteModal }) => {
                 ) : (
                   <>
                     <User className="w-3.5 h-3.5 text-deep-olive" />
-                    <span>Dashboard</span>
+                    <span>{user.name?.split(' ')[0] || 'Dashboard'}</span>
                   </>
                 )}
               </Link>
+              <button
+                onClick={logout}
+                className={`text-xs px-2.5 py-1.5 rounded-full border transition-colors ${
+                  scrolled
+                    ? 'border-red-200 text-red-600 hover:bg-red-50'
+                    : 'border-white/30 text-white hover:bg-white/20'
+                }`}
+              >
+                Sign Out
+              </button>
             </div>
           ) : (
             <Link

@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 const { connectDB } = require('./config/db');
 const errorHandler = require('./middleware/error');
 
-// Load Env
+// Load Environment Variables (Reloaded)
 dotenv.config();
 
 // Connect DB

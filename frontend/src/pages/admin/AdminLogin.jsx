@@ -3,16 +3,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ToastContext } from '../../context/ToastContext';
 import {
-  ShieldCheck, Lock, Mail, ArrowRight, User, Phone,
-  UserPlus, LogIn, Eye, EyeOff, Home, Sparkles
+  ShieldCheck, Lock, Mail, ArrowRight,
+  Eye, EyeOff, Home
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
    AdminLogin  –  email+password form
 ───────────────────────────────────────────── */
-const AdminLoginForm = ({ onSwitchToSignup }) => {
-  const [email, setEmail] = useState('admin@karoliinterior.com');
-  const [password, setPassword] = useState('Admin@password123');
+const AdminLoginForm = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
@@ -75,13 +75,6 @@ const AdminLoginForm = ({ onSwitchToSignup }) => {
         </div>
       </div>
 
-      {/* Dev hint */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1">
-        <p className="font-bold flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> Default Dev Credentials</p>
-        <p>Email: <code className="font-mono">admin@karoliinterior.com</code></p>
-        <p>Password: <code className="font-mono">Admin@password123</code></p>
-      </div>
-
       <button
         type="submit"
         disabled={loading}
@@ -100,78 +93,11 @@ const AdminLoginForm = ({ onSwitchToSignup }) => {
   );
 };
 
-/* ─────────────────────────────────────────────
-   AdminSignupForm  –  (create additional admin)
-───────────────────────────────────────────── */
-const AdminSignupForm = ({ onSwitchToLogin }) => {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
-  const [showPwd, setShowPwd] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { showToast } = useContext(ToastContext);
-
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (form.password !== form.confirm) { showToast('Passwords do not match.', 'error'); return; }
-    setLoading(true);
-    // In production this would call a protected admin-create endpoint
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    showToast('Admin account created! (Connect to backend to persist)', 'success');
-    onSwitchToLogin();
-  };
-
-  const fields = [
-    { key: 'name',    label: 'Full Name',      icon: User,    type: 'text',     ph: 'Admin Full Name' },
-    { key: 'email',   label: 'Admin Email',    icon: Mail,    type: 'email',    ph: 'admin@example.com' },
-    { key: 'phone',   label: 'Phone Number',   icon: Phone,   type: 'tel',      ph: '7347733581' },
-    { key: 'password',label: 'Password',       icon: Lock,    type: showPwd ? 'text' : 'password', ph: 'Min 8 characters' },
-    { key: 'confirm', label: 'Confirm Password',icon: ShieldCheck,type: showPwd ? 'text' : 'password', ph: '••••••••' },
-  ];
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {fields.map(f => {
-        const Icon = f.icon;
-        return (
-          <div key={f.key} className="space-y-1.5">
-            <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">{f.label}</label>
-            <div className="relative">
-              <Icon className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type={f.type}
-                value={form[f.key]}
-                onChange={e => set(f.key, e.target.value)}
-                required
-                placeholder={f.ph}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895]"
-              />
-              {(f.key === 'password') && (
-                <button type="button" onClick={() => setShowPwd(s => !s)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B9A895] hover:text-[#3F5036]">
-                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#3F5036] hover:bg-[#3F5036]/90 text-white font-semibold py-3.5 rounded-xl shadow-md transition-all hover:scale-[1.01] disabled:opacity-60"
-      >
-        {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><UserPlus className="w-4 h-4" /> Create Admin Account</>}
-      </button>
-    </form>
-  );
-};
 
 /* ─────────────────────────────────────────────
    Main Admin Auth Page (shell)
 ───────────────────────────────────────────── */
 const AdminLogin = () => {
-  const [tab, setTab] = useState('login'); // 'login' | 'signup'
 
   return (
     <div className="min-h-screen flex bg-[#3F5036]">
@@ -221,36 +147,13 @@ const AdminLogin = () => {
               <ShieldCheck className="w-4 h-4" /> Secure Admin Access
             </div>
             <h1 className="font-serif text-3xl font-bold text-[#292A26]">
-              {tab === 'login' ? 'Admin Sign In' : 'Create Admin Account'}
+              Admin Sign In
             </h1>
-          </div>
-
-          {/* Tab switcher */}
-          <div className="flex rounded-xl overflow-hidden border border-[#B9A895]/40 bg-[#E8DDCC]/50">
-            <button
-              onClick={() => setTab('login')}
-              className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                tab === 'login' ? 'bg-[#3F5036] text-white shadow-md' : 'text-[#292A26]/60 hover:text-[#3F5036]'
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" /> Sign In
-            </button>
-            <button
-              onClick={() => setTab('signup')}
-              className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                tab === 'signup' ? 'bg-[#3F5036] text-white shadow-md' : 'text-[#292A26]/60 hover:text-[#3F5036]'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" /> Create Account
-            </button>
           </div>
 
           {/* Form */}
           <div className="bg-white border border-[#E8DDCC] rounded-2xl p-6 shadow-lg">
-            {tab === 'login'
-              ? <AdminLoginForm onSwitchToSignup={() => setTab('signup')} />
-              : <AdminSignupForm onSwitchToLogin={() => setTab('login')} />
-            }
+            <AdminLoginForm />
           </div>
 
           {/* Footer links */}

@@ -2,9 +2,11 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ToastContext } from '../context/ToastContext';
+import apiClient from '../api/apiClient';
 import {
   LogIn, Lock, Mail, ArrowRight, User, Phone,
-  UserPlus, Eye, EyeOff, Home, Sparkles, Star
+  UserPlus, Eye, EyeOff, Home, Sparkles, Star,
+  CheckCircle2, KeyRound
 } from 'lucide-react';
 
 /* Feature badges */
@@ -32,7 +34,7 @@ const LoginForm = ({ onSwitch }) => {
     setLoading(false);
     if (res.success) {
       showToast('Welcome back! Logged in successfully.', 'success');
-      navigate(res.user.role === 'ADMIN' ? '/admin' : '/dashboard');
+      navigate(res.user.role === 'ADMIN' ? '/admin' : '/');
     } else {
       showToast(res.error || 'Login failed. Check your credentials.', 'error');
     }
@@ -87,72 +89,301 @@ const LoginForm = ({ onSwitch }) => {
   );
 };
 
-/* ─── Register Form ──────────────────────────── */
+/* ─── Register Form (With Email OTP Verification) ──────────────────────────── */
 const RegisterForm = ({ onSwitch }) => {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useContext(AuthContext);
   const { showToast } = useContext(ToastContext);
   const navigate = useNavigate();
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => {
+    // If user changes email after verification, reset verification status
+    if (k === 'email' && isEmailVerified) {
+      setIsEmailVerified(false);
+      setVerifiedEmail('');
+      setOtpSent(false);
+      setOtp('');
+    }
+    setForm(f => ({ ...f, [k]: v }));
+  };
+
+  // Resend Countdown Timer
+  React.useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => setResendTimer(t => t - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
+
+  const handleSendOtp = async () => {
+    const trimmedEmail = form.email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      showToast('Please enter a valid email address first.', 'error');
+      return;
+    }
+
+    setOtpSending(true);
+    try {
+      const res = await apiClient.post('/auth/send-otp', { email: trimmedEmail });
+      if (res.data.success) {
+        setOtpSent(true);
+        setResendTimer(60);
+        showToast(res.data.message || 'Verification code sent to your email!', 'success');
+      } else {
+        showToast(res.data.error || 'Failed to send OTP code.', 'error');
+      }
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to send OTP. Please check email address.', 'error');
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.trim().length < 6) {
+      showToast('Please enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    setOtpVerifying(true);
+    try {
+      const res = await apiClient.post('/auth/verify-otp', {
+        email: form.email.trim().toLowerCase(),
+        otp: otp.trim()
+      });
+      if (res.data.success) {
+        setIsEmailVerified(true);
+        setVerifiedEmail(form.email.trim().toLowerCase());
+        showToast('Email verified successfully! You can now complete your registration.', 'success');
+      } else {
+        showToast(res.data.error || 'Invalid verification code.', 'error');
+      }
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Invalid or expired OTP code.', 'error');
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password !== form.confirm) { showToast('Passwords do not match.', 'error'); return; }
+
+    if (!isEmailVerified || verifiedEmail !== form.email.trim().toLowerCase()) {
+      showToast('Please verify your email address with the OTP code first.', 'error');
+      return;
+    }
+
+    if (form.password !== form.confirm) {
+      showToast('Passwords do not match.', 'error');
+      return;
+    }
+
+    if (form.password.length < 6) {
+      showToast('Password must be at least 6 characters.', 'error');
+      return;
+    }
+
     setLoading(true);
-    const res = await register(form.name, form.email, form.phone, form.password);
+    const res = await register(form.name, form.email.trim().toLowerCase(), form.phone, form.password);
     setLoading(false);
     if (res.success) {
-      showToast('Account created! Welcome to Karoli.', 'success');
-      navigate('/dashboard');
+      showToast('Account created successfully! Welcome to Karoli.', 'success');
+      navigate('/');
     } else {
       showToast(res.error || 'Registration failed.', 'error');
     }
   };
 
-  const fields = [
-    { key: 'name',     label: 'Full Name',       icon: User,        type: 'text',  ph: 'Rahul Sharma' },
-    { key: 'email',    label: 'Email Address',   icon: Mail,        type: 'email', ph: 'you@example.com' },
-    { key: 'phone',    label: 'Phone Number',    icon: Phone,       type: 'tel',   ph: '7347733581' },
-    { key: 'password', label: 'Password',        icon: Lock,        type: showPwd ? 'text' : 'password', ph: 'Min 6 characters' },
-    { key: 'confirm',  label: 'Confirm Password',icon: Lock,        type: showPwd ? 'text' : 'password', ph: '••••••••' },
-  ];
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {fields.map(f => {
-        const Icon = f.icon;
-        return (
-          <div key={f.key} className="space-y-1.5">
-            <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">{f.label}</label>
-            <div className="relative">
-              <Icon className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type={f.type} value={form[f.key]} onChange={e => set(f.key, e.target.value)}
-                required={f.key !== 'phone'} placeholder={f.ph} minLength={['password','confirm'].includes(f.key) ? 6 : undefined}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895]"
-              />
-              {f.key === 'password' && (
-                <button type="button" onClick={() => setShowPwd(s => !s)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B9A895] hover:text-[#3F5036]">
-                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
+      {/* Full Name */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">Full Name</label>
+        <div className="relative">
+          <User className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={form.name}
+            onChange={e => set('name', e.target.value)}
+            required
+            placeholder="Rahul Sharma"
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895]"
+          />
+        </div>
+      </div>
 
+      {/* Email + OTP Verification Action */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">Email Address</label>
+          {isEmailVerified ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Verified
+            </span>
+          ) : (
+            <span className="text-[11px] text-[#3F5036]/70">Verification required</span>
+          )}
+        </div>
+        <div className="relative flex gap-2">
+          <div className="relative flex-1">
+            <Mail className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="email"
+              value={form.email}
+              onChange={e => set('email', e.target.value)}
+              required
+              disabled={isEmailVerified}
+              placeholder="you@example.com"
+              className={`w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895] ${
+                isEmailVerified ? 'opacity-80 bg-emerald-50/60 border-emerald-300' : ''
+              }`}
+            />
+          </div>
+
+          {!isEmailVerified && (
+            <button
+              type="button"
+              onClick={handleSendOtp}
+              disabled={otpSending || resendTimer > 0 || !form.email}
+              className="px-3.5 py-2.5 rounded-xl bg-[#3F5036] hover:bg-[#3F5036]/90 disabled:bg-[#B9A895]/40 text-white text-xs font-bold whitespace-nowrap transition-all shadow-sm flex items-center gap-1.5"
+            >
+              {otpSending ? (
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : resendTimer > 0 ? (
+                `Resend (${resendTimer}s)`
+              ) : otpSent ? (
+                'Resend OTP'
+              ) : (
+                'Send OTP'
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* OTP Code Input Box (Visible once OTP is sent and not yet verified) */}
+      {otpSent && !isEmailVerified && (
+        <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 space-y-2.5 animate-fade-in">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-amber-900 flex items-center gap-1">
+              <KeyRound className="w-3.5 h-3.5" /> Enter 6-Digit Email OTP
+            </span>
+            <span className="text-[11px] text-amber-700">Valid for 10 min</span>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              maxLength={6}
+              value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-white border border-amber-300 text-center font-mono font-bold text-lg tracking-widest text-[#292A26] focus:outline-none focus:border-[#3F5036]"
+            />
+            <button
+              type="button"
+              onClick={handleVerifyOtp}
+              disabled={otpVerifying || otp.length < 6}
+              className="px-4 py-2.5 rounded-lg bg-[#3F5036] hover:bg-[#3F5036]/90 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            >
+              {otpVerifying ? (
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>Verify OTP <ArrowRight className="w-3.5 h-3.5" /></>
+              )}
+            </button>
+          </div>
+          <p className="text-[11px] text-amber-800/80">
+            Check your inbox (or spam) for the verification code sent from Karoli Interior Hub.
+          </p>
+        </div>
+      )}
+
+      {/* Phone Number */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">Phone Number</label>
+        <div className="relative">
+          <Phone className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={e => set('phone', e.target.value)}
+            placeholder="7347733581"
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895]"
+          />
+        </div>
+      </div>
+
+      {/* Password */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">Password</label>
+        <div className="relative">
+          <Lock className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type={showPwd ? 'text' : 'password'}
+            value={form.password}
+            onChange={e => set('password', e.target.value)}
+            required
+            minLength={6}
+            placeholder="Min 6 characters"
+            className="w-full pl-10 pr-11 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895]"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPwd(s => !s)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B9A895] hover:text-[#3F5036]"
+          >
+            {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Confirm Password */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-[#292A26] uppercase tracking-wider">Confirm Password</label>
+        <div className="relative">
+          <Lock className="w-4 h-4 text-[#B9A895] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type={showPwd ? 'text' : 'password'}
+            value={form.confirm}
+            onChange={e => set('confirm', e.target.value)}
+            required
+            minLength={6}
+            placeholder="••••••••"
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F0E6] border border-[#B9A895]/40 text-[#292A26] text-sm focus:outline-none focus:border-[#3F5036] focus:ring-2 focus:ring-[#3F5036]/10 transition-all placeholder:text-[#B9A895]"
+          />
+        </div>
+      </div>
+
+      {/* Create Account Submit Button */}
       <button
-        type="submit" disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#3F5036] hover:bg-[#3F5036]/90 text-white font-semibold py-3.5 rounded-xl shadow-md transition-all hover:scale-[1.01] disabled:opacity-60"
+        type="submit"
+        disabled={loading || !isEmailVerified}
+        className="w-full flex items-center justify-center gap-2 bg-[#3F5036] hover:bg-[#3F5036]/90 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
       >
-        {loading
-          ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          : <><UserPlus className="w-4 h-4" /> Create My Account</>
-        }
+        {loading ? (
+          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : (
+          <><UserPlus className="w-4 h-4" /> Create My Account</>
+        )}
       </button>
+
+      {!isEmailVerified && (
+        <p className="text-center text-[11px] text-[#292A26]/50">
+          * Email OTP verification is required to enable account creation.
+        </p>
+      )}
 
       <p className="text-center text-xs text-[#292A26]/60">
         Already have an account?{' '}
