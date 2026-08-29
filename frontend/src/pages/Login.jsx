@@ -139,6 +139,9 @@ const RegisterForm = ({ onSwitch }) => {
       if (res.data.success) {
         setOtpSent(true);
         setResendTimer(60);
+        if (res.data.devOtp) {
+          setOtp(res.data.devOtp);
+        }
         showToast(res.data.message || 'Verification code sent to your email!', 'success');
       } else {
         showToast(res.data.error || 'Failed to send OTP code.', 'error');
