@@ -85,7 +85,38 @@ const sendOtpEmail = async (toEmail, otp) => {
     </html>
   `;
 
-  // 1. Resend HTTPS API (Works 100% on Render Free Tier without SMTP port block)
+  // 1. Brevo (Sendinblue) HTTPS API (300 free emails/day to ANY email address, never blocked by Render)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || 'karoliinterior.noreply@gmail.com';
+      const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: { name: companyName, email: senderEmail },
+          to: [{ email: toEmail }],
+          subject: `${otp} is your verification code - ${companyName}`,
+          htmlContent: htmlContent
+        })
+      });
+
+      const brevoData = await brevoRes.json();
+      if (brevoRes.ok) {
+        console.log(`[BREVO API SENT] OTP successfully delivered to ${toEmail}. Message ID:`, brevoData.messageId);
+        return { success: true, messageId: brevoData.messageId };
+      } else {
+        console.error(`[BREVO API ERROR]:`, brevoData);
+      }
+    } catch (brevoErr) {
+      console.error(`[BREVO API NETWORK ERROR]:`, brevoErr.message);
+    }
+  }
+
+  // 2. Resend HTTPS API
   if (process.env.RESEND_API_KEY) {
     try {
       const fromEmail = process.env.RESEND_FROM || 'Karoli Interior Hub <onboarding@resend.dev>';
