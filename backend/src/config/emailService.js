@@ -13,11 +13,20 @@ const createTransporter = () => {
 
   if (host === 'smtp.gmail.com' || (user && user.endsWith('@gmail.com'))) {
     return nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // Use STARTTLS on port 587
       auth: {
         user,
         pass,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      family: 4, // Force IPv4 to prevent cloud IPv6 connection timeouts on Render
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
 
