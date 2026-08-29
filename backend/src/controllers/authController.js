@@ -70,25 +70,16 @@ exports.sendOtp = async (req, res) => {
       });
     }
 
-    // Send email with resilient fallback
-    let emailSent = false;
-    try {
-      await sendOtpEmail(trimmedEmail, otp);
-      emailSent = true;
-    } catch (mailErr) {
-      console.warn(`[OTP Mail Fallback] Outbound email was blocked by cloud host (${mailErr.message}). Provided OTP code directly.`);
-    }
+    // Send real-time email
+    const mailResult = await sendOtpEmail(trimmedEmail, otp);
 
     res.status(200).json({
       success: true,
-      message: emailSent
-        ? `A 6-digit verification code has been sent to ${trimmedEmail}`
-        : `Verification code generated: ${otp}`,
-      devOtp: otp,
+      message: `A 6-digit verification code has been sent to ${trimmedEmail}. Please check your inbox.`,
     });
   } catch (err) {
-    console.error('Error generating OTP:', err);
-    res.status(500).json({ success: false, error: 'Failed to generate verification code. ' + err.message });
+    console.error('Error sending OTP:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to deliver OTP email. Please try again.' });
   }
 };
 
