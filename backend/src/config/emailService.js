@@ -47,7 +47,6 @@ const createTransporter = () => {
  * @param {string} otp - 6-digit verification code
  */
 const sendOtpEmail = async (toEmail, otp) => {
-  const transporter = createTransporter();
   const companyName = process.env.COMPANY_NAME || 'Karoli Interior Hub';
 
   const htmlContent = `
@@ -85,6 +84,39 @@ const sendOtpEmail = async (toEmail, otp) => {
       </body>
     </html>
   `;
+
+  // 1. Resend HTTPS API (Works 100% on Render Free Tier without SMTP port block)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const fromEmail = process.env.RESEND_FROM || 'Karoli Interior Hub <onboarding@resend.dev>';
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [toEmail],
+          subject: `${otp} is your verification code - ${companyName}`,
+          html: htmlContent,
+        }),
+      });
+
+      const resendData = await resendRes.json();
+      if (resendRes.ok) {
+        console.log(`[RESEND API SENT] OTP sent to ${toEmail}. ID: ${resendData.id}`);
+        return { success: true, messageId: resendData.id };
+      } else {
+        console.error(`[RESEND API ERROR]:`, resendData);
+      }
+    } catch (apiErr) {
+      console.error(`[RESEND API NETWORK ERROR]:`, apiErr.message);
+    }
+  }
+
+  // 2. Nodemailer SMTP Transporter (Localhost / Non-blocked SMTP hosting)
+  const transporter = createTransporter();
 
   if (!transporter) {
     console.log(`\n========================================`);
