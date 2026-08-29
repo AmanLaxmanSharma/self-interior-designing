@@ -87,7 +87,7 @@ const sendOtpEmail = async (toEmail, otp) => {
 
   // 1. Brevo (Sendinblue) HTTPS API (300 free emails/day to ANY email address, never blocked by Render)
   if (process.env.BREVO_API_KEY) {
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_CONTACT || process.env.SMTP_USER || 'karoliinterior.noreply@gmail.com';
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || 'karoliinterior.noreply@gmail.com';
     const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
